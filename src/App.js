@@ -1,24 +1,81 @@
-import logo from './logo.svg';
+import { useRef, useEffect, useState } from 'react';
+import * as tt from '@tomtom-international/web-sdk-maps'
 import './App.css';
+import '@tomtom-international/web-sdk-maps/dist/maps.css';
 
-function App() {
+const App = () => {
+
+  const mapElement = useRef()
+  const [ map, setMap] = useState({})
+  const [ longitude, setLongitude ] = useState(-0.112869)
+  const [ latitude, setLatitude ] = useState(51.504)
+
+  useEffect(() => {
+
+    let map = tt.map({
+      key: process.env.REACT_APP_TOM_TOM_API_KEY,
+      container: mapElement.current,
+      stylesVisibility: {
+        trafficIncidents: true,
+        trafficFlow: true,
+      },
+      center: [longitude, latitude],
+      zoom: 14
+    });
+
+    setMap(map);
+
+    const addMarker = () => {
+
+      const popupOffset = {
+        bottom: [0, -25]
+      }
+      const popup = new tt.Popup({ offset: popupOffset }).setHTML('This is you!')
+
+      const element = document.createElement('div');
+      element.className = 'marker'
+
+      const marker = new tt.Marker({
+        draggable: true,
+        element: element,
+      })
+      .setLngLat([longitude, latitude])
+      .addTo(map);
+
+      marker.on('dragend', () => {
+        const lngLat = marker.getLngLat()
+        setLongitude(lngLat.lng)
+        setLatitude(lngLat.lat)
+      })
+
+      marker.setPopup(popup).togglePopup()
+    }
+
+    addMarker();
+
+    return new Promise((resolve, reject) => {
+      
+    })
+
+    return () => map.remove();
+
+  }, [longitude, latitude])
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+    { map && <div className="app">
+     <div ref={mapElement} className="map" />
+     <div className="search-bar">
+       <h1>Where to?</h1>
+       <input type='text' 
+              id='longitude' className='longitude' placeholder='Put in longitude' 
+              onChange={ (e) =>{setLongitude(e.target.value)}}></input>
+       <input type='text' 
+              id='latitude' className='latitude' placeholder='Put in latitude' 
+              onChange={ (e) =>{setLatitude(e.target.value)}}></input>
+     </div>
+    </div>}
+    </>
   );
 }
 
